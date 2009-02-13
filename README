@@ -1,0 +1,81 @@
+WHAT YOU NEED TO USE BROOSER
+----------------------------
+In order to use Brooser you need:
+
+ * A web server (Apache, Cheerokee, lightHttpd...)
+ * PHP 5 with the followin modules:
+   * json
+ * Mootools 1.1 (or later)
+
+CONFIGURATION
+-------------
+Open php/access.php and, in the $allow array, add the allowed directories.
+Optional : In $deny array, add the denied files/directories (if they are in an allowed directory).
+
+Example of access.php : 
+
+<?php 
+
+$allow = array('./test','./test2');
+$deny  = array('./test/secret.txt');
+
+?>
+
+USAGE
+-----
+A sample page :
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>Brooser Demo Page</title>
+<!-- Mootools 1.1 -->
+<script type="text/javascript" src="mootools.js"></script>
+<!-- Brooser -->
+<link href="brooser/css/brooser.css" rel="stylesheet" media="screen" />
+<script type="text/javascript" src="brooser/js/Brooser.js"></script>
+
+<!-- Initilialize Brooser -->
+<script type="text/javascript">
+	window.addEvent('domready',function() {
+		new Brooser('browse',{
+			currentDir:'./../../test',
+			phpFile:'brooser/php/Brooser.php',
+			onFinish:function(file) {
+				$('file').value=file;
+			}
+		});
+	});
+</script>
+</head>
+<body>
+ <p>
+  <input type="text" id="file" size="100" />
+  <input type="button" id="browse" value="Browse" />
+ </p>
+</body>
+</html>
+
+USED IN BROOSER
+------------
+These softwares are used in Brooser :
+
+getID3() - www.getid3.org - James Heinrich / Allan Hansen
+DewPlayer - www.alsacreations.fr/mp3-dewplayer.html - Dew
+Player FLV - resources.neolao.com/flash/components/player_flv - Neolao
+
+Also it use :
+
+isBinary() function - www.hesasys.org - HesaSys Team
+Famfamfam icons - www.famfamfam.com - Famfamfam
+
+MORE INFOS
+----------
+For more infos, example, etc.
+
+visit http://www.k1der.net/blog/country/tag/brooser
+
+LICENSE
+---------
+see MIT-LICENSE.txt
