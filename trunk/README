@@ -5,7 +5,7 @@ In order to use Brooser you need:
  * A web server (Apache, Cheerokee, lightHttpd...)
  * PHP 5 with the followin modules:
    * json
- * Mootools 1.1 (or later)
+ * Mootools 1.2 (or later)
 
 CONFIGURATION
 -------------
@@ -30,7 +30,7 @@ A sample page :
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 <title>Brooser Demo Page</title>
-<!-- Mootools 1.1 -->
+<!-- Mootools 1.2 -->
 <script type="text/javascript" src="mootools.js"></script>
 <!-- Brooser -->
 <link href="brooser/css/brooser.css" rel="stylesheet" media="screen" />
