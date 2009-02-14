@@ -2,14 +2,14 @@
 Script: Brooser.js
 	Brooser - A server-side file browser for Mootools.
 
-Copyright:
-	Copyright (c) 2007 Yannick Croissant
+Author:
+	Yannick Croissant
 
 License:
 	MIT-style license (see MIT-LICENSE.txt)
 
 Version:
-	0.9
+	0.9.1
 
  */
 
@@ -24,7 +24,7 @@ Dependencies :
 		<Array.js>, <String.js>, <Function.js>, <Element.js>
 		<Element.Event.js>, <Element.Selectors.js>
 		<Window.DomReady.js>, <Window.Size.js>
-		<XHR>, <Json>
+		<XHR>, <JSON>
 
 Options:
 	targetData - data to return; default is 'path'.
@@ -47,17 +47,19 @@ Example:
 */
 var Brooser = new Class({
 
+	Implements: [Options, Events],
+	
 	options: {
-		onFinish:   Class.empty,
+		onFinish:   $empty,
 		targetData: 'path',
 		currentDir: './',
 		phpFile:    'php/Brooser.php'
 	},
 
 	initialize: function(element,options){
-		this.element = this.element || element;
-		this.XHRRequest = null;
+		this.element = $(element);
 		this.setOptions(options);
+		this.XHRRequest = null;
 		this.contruct();
 		this.setTarget();
 	},
@@ -128,7 +130,7 @@ var Brooser = new Class({
 			.injectInside(infos);
 			
 		new Element('img',{id:'brooser-icon'}).injectInside(head);
-		new Element('h1').injectInside(head);
+		new Element('h1', {id:'brooser-title'}).injectInside(head);
 		new Element('span',{id:'brooser-date'}).appendText('Modified : ').injectInside(head);
 		new Element('h2').appendText('Informations').injectInside(infos);
 		
@@ -175,8 +177,8 @@ var Brooser = new Class({
 			data = this.options.currentFile.dir+'/'+this.options.currentFile.name;
 		}
 		this.hide();
-		this.options.onFinish(data);
 		new Event(e).stop();
+		this.fireEvent('onFinish', data);
 	},
 	
 	/*
@@ -208,7 +210,7 @@ var Brooser = new Class({
 		$('brooser-overlay').setStyles({
 			display:'block',
 			width:window.getWidth()+'px',
-			height:window.getHeight()+'px'
+			height:window.getScrollHeight()+'px'
 		});
 		$('brooser').setStyle('display','block');
 		
@@ -241,13 +243,13 @@ var Brooser = new Class({
 		this.options.current=null;
 		$('brooser-infos').setStyle('visibility','hidden');
 		if(this.XHRRequest) this.XHRRequest.cancel();
-		this.XHRRequest = new XHR({
+		this.XHRRequest = new Request({
+				 url: this.options.phpFile,
 				 onRequest: this.loadingBrowser.bind(this),
 				 onSuccess: this.fillDir.bind(this),
 				 method:'post'
 			})
-			.send(this.options.phpFile,
-				 'action=browse&dir='+dir+
+			.send('action=browse&dir='+dir+
 				 '&time='+(new Date().getTime())
 			);
 	},
@@ -265,8 +267,8 @@ var Brooser = new Class({
 		Set loading state to the preview
 	*/
 	loadingPreview: function() {
-		if($('preview-style'))  $('preview-style').remove();
-		if($('preview-script')) $('preview-script').remove();
+		if($('preview-style'))  $('preview-style').destroy();
+		if($('preview-script')) $('preview-script').destroy();
 		$('brooser-preview').empty().addClass('loading');
 	},
 	
@@ -276,7 +278,7 @@ var Brooser = new Class({
 	*/
 	fillDir: function(files) {
 		$('brooser-browser').removeClass('loading');
-		files = Json.evaluate(files);
+		files = JSON.decode(files);
 		$each(files,function(file) {
 			this.options.currentDir=file.dir;
 			var a = new Element('a')
@@ -294,7 +296,8 @@ var Brooser = new Class({
 						return;
 					}
 					
-					var el = e.getTarget('A');
+					var el = e.target;
+					if (el.get('tag') != 'a') el = e.target.getParent('a');
 					this.fillInfos(file);
 					if (this.options.current) {
 						this.options.current.removeClass('selected');
@@ -320,11 +323,11 @@ var Brooser = new Class({
 	fillInfos: function(file) {
 		$('brooser-infos').setStyle('visibility','');
 		$('brooser-preview').empty();
-		$$('#brooser-infos img')[0].setProperties({
+		$('brooser-icon').setProperties({
 			src:file.icon,
 			alt:file.mime
 		});
-		$$('#brooser-infos h1')[0].empty().appendText(file.name);
+		$('brooser-title').empty().appendText(file.name);
 		$('brooser-date').empty().appendText('Modified : '+file.date);
 		$('brooser-type').empty().appendText(file.mime);
 		var sizeCalc = this.sizeCalc(file.size,true,0);
@@ -333,13 +336,13 @@ var Brooser = new Class({
 		
 		// Preview
 		if(this.XHRRequest) this.XHRRequest.cancel();
-		this.XHRRequest = new XHR({
+		this.XHRRequest = new Request({
+				 url: this.options.phpFile,
 				 onRequest: this.loadingPreview.bind(this),
 				 onSuccess: this.fillPreview.bind(this),
 				 method:'post'
 			})
-			.send(this.options.phpFile,
-				 'action=preview&dir='+file.dir+
+			.send('action=preview&dir='+file.dir+
 				 '&file='+encodeURI(file.name)+
 				 '&mimetype='+file.mime+
 				 '&time='+(new Date().getTime())
@@ -351,7 +354,7 @@ var Brooser = new Class({
 		Fill the preview panel with the selected file preview
 	*/
 	fillPreview: function(data) {
-		data = Json.evaluate(data);
+		data = JSON.decode(data);
 		
 		// Inject styles
 		if(data.style.length>0) {
@@ -372,7 +375,7 @@ var Brooser = new Class({
 		
 		// Inject preview's content
 		$('brooser-preview').removeClass('loading');
-		$('brooser-preview').setHTML(data.content);
+		$('brooser-preview').set('html',data.content);
 	},
 	
 	/*
@@ -393,34 +396,5 @@ var Brooser = new Class({
 		}
 		return Math.round(size*prec)/prec+tab[i];
 	}
-	
-});
-Brooser.implement(new Options());
 
-/*  
-Property: getTarget
-	Find the wanted element through the target of the event.
-
-Parameters:
-	tag - wanted element's tag
-	
-Example:
-	> html:
-	> <a href="example.html"><img id="myimage" src="myimage.gif" alt="my image" /></a>
-	> js:
-	> $('myimage').addEvent('click', function(e) {
-	>  var el = e.getTarget('A');
-	>  alert(el.href); // display "example.html"
-	> });
-*/
-Event.implement({	
-	getTarget: function(tag) {
-		var el = (this.srcElement ? this.srcElement : this.target);
-		if (tag) {
-			while(el && el.nodeName != tag) {
-				el = el.parentNode;
-			}
-		}
-		return el;
-	}
 });
